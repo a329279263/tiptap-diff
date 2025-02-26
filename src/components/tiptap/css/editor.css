@@ -1,0 +1,273 @@
+/* Give a remote user a caret */
+.collaboration-cursor__caret {
+    position: relative;
+    margin-left: -1px;
+    margin-right: -1px;
+    border-left: 1px solid #0d0d0d;
+    border-right: 1px solid #0d0d0d;
+    word-break: normal;
+    pointer-events: none;
+}
+
+/* Render the username above the caret */
+.collaboration-cursor__label {
+    position: absolute;
+    top: -1.4em;
+    left: -1px;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: normal;
+    user-select: none;
+    color: #0d0d0d;
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px 3px 3px 0;
+    white-space: nowrap;
+}
+
+/* Basic editor styles */
+.ProseMirror {
+    min-height: 100px;
+    line-height: normal;
+    overflow: visible !important;
+
+
+    table {
+        border-collapse: collapse;
+        margin: 0;
+        width: 100%;
+        overflow: hidden;
+        table-layout: fixed;
+        background-color: #fff; /* 添加表格背景颜色 */
+    }
+
+    td,
+    th {
+        border: 1px solid #dee2e6; /* 更柔和的边框颜色 */
+        box-sizing: border-box;
+        min-width: 1em;
+        padding: 8px 12px; /* 增加内边距，提高可读性 */
+        text-align: left; /* 默认左对齐 */
+        vertical-align: middle; /* 垂直居中 */
+    }
+
+    th {
+        background-color: #6c757d; /* 更深的背景颜色，提高对比度 */
+        color: #fff; /* 字体颜色为白色，以增加对比度 */
+        font-weight: bold;
+    }
+
+    /* 鼠标悬停时的高亮效果 */
+    tr:hover {
+        background-color: #f8f9fa; /* 悬停时的背景颜色 */
+    }
+
+    /* 奇数行背景色 */
+    tr:nth-child(odd) {
+        background-color: #f2f2f2; /* 轻微的背景色区分奇偶行 */
+    }
+
+    /* 偶数行背景色 */
+    tr:nth-child(even) {
+        background-color: #fff; /* 默认背景色 */
+    }
+
+    /* 标题样式 */
+
+    h1 {
+        font-size: 2.5em; /* 2.5 倍的字体大小 */
+        font-weight: bold; /* 加粗 */
+        margin: 0.67em 0; /* 上下边距 */
+    }
+
+    h2 {
+        font-size: 2em; /* 2 倍的字体大小 */
+        font-weight: bold; /* 加粗 */
+        margin: 0.83em 0; /* 上下边距 */
+    }
+
+    h3 {
+        font-size: 1.5em; /* 1.5 倍的字体大小 */
+        font-weight: bold; /* 加粗 */
+        margin: 1em 0; /* 上下边距 */
+    }
+    
+    h4 {
+        font-size: 1.17em; /* 1.17 倍的字体大小 */
+        font-weight: bold; /* 加粗 */
+        margin: 1.33em 0; /* 上下边距 */
+    }
+
+    h5 {
+        font-size: 1em; /* 默认字体大小 */
+        font-weight: bold; /* 加粗 */
+        margin: 1.5em 0; /* 上下边距 */
+    }
+
+    h6 {
+        font-size: 0.83em; /* 0.83 倍的字体大小 */
+        font-weight: bold; /* 加粗 */
+        margin: 1.67em 0; /* 上下边距 */
+    }
+
+    em {
+        font-style: italic !important;
+    }
+
+    strong {
+        font-weight: bold !important;
+    }
+
+}
+
+.ProseMirror blockquote {
+    border-left: 2px solid rgba(13, 13, 13, .1);
+    padding-left: 1rem;
+}
+
+.ProseMirror:focus {
+    outline: none;
+}
+
+.ProseMirror p {
+    margin-top: 0;
+}
+
+.ProseMirror a {
+    cursor: pointer;
+    color: #409eff;
+}
+
+.ProseMirror a:hover {
+    text-decoration: underline;
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+    padding: 0 1rem;
+}
+
+.ProseMirror ul {
+    list-style: disc;
+}
+
+.ProseMirror ol {
+    list-style: decimal;
+}
+
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3,
+.ProseMirror h4,
+.ProseMirror h5,
+.ProseMirror h6 {
+    line-height: 1.1;
+}
+
+.ProseMirror code {
+    background-color: rgba(#616161, 0.1);
+    color: #616161;
+}
+
+.ProseMirror pre {
+    background: #0d0d0d;
+    color: #fff;
+    font-family: 'JetBrainsMono', monospace;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+}
+
+.ProseMirror pre code {
+    color: inherit;
+    padding: 0;
+    background: none;
+    font-size: 0.8rem;
+}
+
+.ProseMirror mark {
+    background-color: #faf594;
+}
+
+.ProseMirror img {
+    height: 100px;
+}
+
+.ProseMirror hr {
+    margin: 1rem 0;
+}
+
+.ProseMirror blockquote {
+    padding-left: 1rem;
+    border-left: 2px solid rgba(#0d0d0d, 0.1);
+}
+
+.ProseMirror hr {
+    border: none;
+    border-top: 2px solid rgba(#0d0d0d, 0.1);
+    margin: 2rem 0;
+}
+
+
+
+/* 修改标注样式 */
+/* 基础样式 */
+.ProseMirror [data-annotation-id] {
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+/* 渲染模式样式 */
+.ProseMirror.show-annotations .annotation-reason,
+.ProseMirror .annotation-reason:hover,
+.ProseMirror .annotation-reason.highlight-selected {
+    background-color: rgba(255, 235, 59, 0.2); /* 黄色背景 */
+    border-bottom: 1px dashed #ffeb3b; /* 黄色虚线边框 */
+}
+
+.ProseMirror.show-annotations .annotation-logic,
+.ProseMirror .annotation-logic:hover,
+.ProseMirror .annotation-logic.highlight-selected {
+    background-color: rgba(76, 175, 80, 0.2); /* 绿色背景 */
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2); /* 绿色阴影 */
+}
+
+.ProseMirror.show-annotations .annotation-reference,
+.ProseMirror .annotation-reference:hover,
+.ProseMirror .annotation-reference.highlight-selected {
+    background-color: rgba(33, 150, 243, 0.2) !important; /* 蓝色背景 */
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2); /* 蓝色阴影 */
+}
+
+.ProseMirror [data-annotation-id]::before {
+    content: attr(data-annotation-description);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px 8px;
+    background: #333;
+    color: white;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+    z-index: 1000;
+}
+
+.ProseMirror [data-annotation-id]:hover::before {
+    opacity: 1;
+    visibility: visible;
+}
+/* 高亮动画 */
+@keyframes highlight-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 213, 79, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(255, 213, 79, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 213, 79, 0); }
+}
+
+.ProseMirror [data-annotation-id].highlight-selected {
+    animation: highlight-pulse 2s ease-out;
+}
+
