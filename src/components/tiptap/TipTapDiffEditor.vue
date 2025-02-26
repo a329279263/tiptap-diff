@@ -116,6 +116,7 @@ export default {
 </script>
 <style scoped lang="less">
 
+
 .tiptap {
   padding: 10px;
   border-radius: 8px;
@@ -127,8 +128,8 @@ export default {
 .editor {
   display: flex;
   flex-direction: column;
-  color: #0d0d0d;
-  background-color: #fff;
+  color: #333; /* 深色但不太深 */
+  background-color: #f9f9f9; /* 浅色背景 */
   border: 1px solid #dcdfe6;
   border-radius: 0.75rem;
 }
@@ -154,8 +155,30 @@ export default {
 .editor__content /deep/ [data-diff-remove] table td,
 .editor__content /deep/ *[data-del] {
   text-decoration: line-through;
-  color: #666;
-  background-color: #ffe7e7 !important;
+  color: #d9534f; /* 柔和的红色 */
+  background-color: #f2dede !important; /* 浅红色背景 */
+  position: relative;
+}
+
+.editor__content /deep/ [data-diff-remove]::after,
+.editor__content /deep/ *[data-del]::after {
+  content: '删除';
+  position: absolute;
+  top: -1.5em;
+  left: 0;
+  background: #d9534f;
+  color: #fff;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 12px;
+  display: none;
+  white-space: nowrap; /* 确保内容不换行 */
+
+}
+
+.editor__content /deep/ [data-diff-remove]:hover::after,
+.editor__content /deep/ *[data-del]:hover::after {
+  display: block;
 }
 
 .editor__content /deep/ [data-diff-add],
@@ -163,21 +186,55 @@ export default {
 .editor__content /deep/ [data-diff-add] table td,
 .editor__content /deep/ *[data-ins] {
   text-decoration: underline;
-  background-color: #ddfade !important;
+  background-color: #dff0d8 !important; /* 浅绿色背景 */
+  color: #5cb85c; /* 柔和的绿色 */
+  position: relative;
 }
 
-.editor__content /deep/ img[data-del] {
-  border: 8px solid #ffe7e7;
-  box-sizing: content-box;
+.editor__content /deep/ [data-diff-add]::after,
+.editor__content /deep/ *[data-ins]::after {
+  content: '新增';
+  position: absolute;
+  top: -1.5em;
+  left: 0;
+  background: #5cb85c;
+  color: #fff;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 12px;
+  display: none;
+  white-space: nowrap; /* 确保内容不换行 */
+
 }
 
-.editor__content /deep/ img[data-ins] {
-  border: 8px solid #ddfade;
-  box-sizing: content-box;
+.editor__content /deep/ [data-diff-add]:hover::after,
+.editor__content /deep/ *[data-ins]:hover::after {
+  display: block;
 }
 
 .editor__content /deep/ *[data-diff-change] {
-  background-color: #d6f0ff !important;
+  background-color: #d9edf7 !important; /* 浅蓝色背景 */
+  color: #5bc0de; /* 柔和的蓝色 */
+  position: relative;
+}
+
+.editor__content /deep/ *[data-diff-change]::after {
+  content: '更改';
+  position: absolute;
+  top: -1.5em;
+  left: 0;
+  background: #5bc0de;
+  color: #fff;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 12px;
+  display: none;
+  white-space: nowrap; /* 确保内容不换行 */
+
+}
+
+.editor__content /deep/ *[data-diff-change]:hover::after {
+  display: block;
 }
 
 .editor__content /deep/ [data-diff-add],
