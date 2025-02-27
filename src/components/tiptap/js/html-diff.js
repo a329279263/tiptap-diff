@@ -140,6 +140,19 @@ const diffInternal = ($origin, $changed, options) => {
       return;
     }
 
+    if ($similar.nodeType === NodeTypes.text && $to.nodeType !== NodeTypes.text) {
+      patches.push({
+        action: 'removeTextElement',
+        element: $similar,
+        before: $to,
+      });
+      patches.push({
+        action: 'addElement',
+        element: $to,
+      });
+      return;
+    }
+
     if ($to.nodeName === $similar.nodeName) {
       patches.push(...getPatchBetweenSameTagNodes($similar, $to, options));
     } else if (preferAsSameTag($to, $similar)) {
@@ -181,6 +194,9 @@ const diffInternal = ($origin, $changed, options) => {
 
   originChildNodes.forEach(($node, index) => {
     if (usedOriginChildIndex.includes(index)) return;
+    
+    const actionName = $node.nodeType === NodeTypes.text ? 'removeTextElement' : 'removeElement';
+    
     let insertBefore = null;
     let nextIndex = index + 1;
     while (nextIndex < originChildNodes.length) {
@@ -191,67 +207,13 @@ const diffInternal = ($origin, $changed, options) => {
       nextIndex += 1;
     }
 
-    const actionName = $node.nodeType === NodeTypes.text ? 'removeTextElement' : 'removeElement';
-    let removePatch;
-
-    if (insertBefore) {
-      patches.push(
-        (removePatch = {
-          action: actionName,
-          element: $node,
-          before: insertBefore,
-        }),
-      );
-    } else if (!changedChildNodes.length) {
-      const isRootDiv = !$changed.parentElement;
-      patches.unshift(
-        (removePatch = {
-          action: actionName,
-          element: $node,
-          ...(isRootDiv ? {} : { in: $changed }),
-        }),
-      );
-    } else {
-      const siblingPrev = usedOriginChildIndex.find((item) => item < index);
-
-      if (siblingPrev === undefined) {
-        patches.push(
-          (removePatch = {
-            action: actionName,
-            element: $node,
-            before: changedChildNodes[0],
-          }),
-        );
-      } else {
-        patches.unshift(
-          (removePatch = {
-            action: actionName,
-            element: $node,
-            after: usedMaps[siblingPrev],
-          }),
-        );
-      }
-    }
-
-    if (removePatch.action === 'removeElement') {
-      const $fromElement = removePatch.element;
-      const $toElements = (
-        removePatch.before
-          ? removePatch.before.previousSibling
-          : removePatch.after
-            ? removePatch.after.nextSibling
-            : null
-      );
-      if ($toElements) {
-        const addPatch = patches.find((item) => {
-          return item.action === 'addElement' && $toElements === item.element;
-        });
-        if (addPatch) {
-          patches = patches.filter((item) => item !== addPatch && item !== removePatch);
-          patches.push(...getPatchBetweenSameTagNodes($fromElement, addPatch.element, options));
-        }
-      }
-    }
+    patches.push({
+      action: actionName,
+      element: $node,
+      before: insertBefore || null,
+      after: null,
+      in: !insertBefore ? $changed : null
+    });
   });
 
   return patches;

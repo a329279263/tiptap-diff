@@ -88,7 +88,15 @@ export const handleAddElement = (diff) => {
 
 export const handleRemoveElement = (diff) => {
   const $deleted = formatDeletedHtml(diff.element);
-  diff.element.replaceWith($deleted);
+  
+  // 添加这个判断来确保删除的元素被正确插入到DOM中
+  if (diff.before) {
+    diff.before.parentNode?.insertBefore($deleted, diff.before);
+  } else if (diff.after) {
+    diff.after.parentNode?.insertBefore($deleted, diff.after.nextSibling);
+  } else if (diff.in) {
+    diff.in.appendChild($deleted);
+  }
 };
 
 export const handleReplaceElement = (diff) => {
@@ -100,17 +108,16 @@ export const handleReplaceElement = (diff) => {
     if ($prev.nodeName === 'IMG' && $current.nodeType === Node.TEXT_NODE) {
       const $wrapper = createEmptyDom('span');
       $wrapper.setAttribute('data-diff-remove', 'remove-element');
-      $wrapper.className = 'diff-wrapper'; // 添加类名以帮助识别
-      
+
       const $deleted = formatDeletedHtml($prev.cloneNode(true));
       $deleted.setAttribute('data-diff-type', 'img-to-text');
       $deleted.setAttribute('data-diff-remove', 'remove-element');
       $wrapper.appendChild($deleted);
-      
+
       const $ins = createEmptyDom('span');
       $ins.setAttribute('data-diff-add', 'add-text');
       $ins.innerHTML = $current.nodeValue || '';
-      
+
       const parentNode = $current.parentNode;
       $current.remove();
       parentNode.appendChild($wrapper);
@@ -122,22 +129,20 @@ export const handleReplaceElement = (diff) => {
     if ($current.nodeName === 'IMG' && $prev.nodeType === Node.TEXT_NODE) {
       const $wrapper = createEmptyDom('span');
       $wrapper.setAttribute('data-diff-remove', 'remove-text');
-      $wrapper.className = 'diff-wrapper';
-      
+
       const $deleted = formatDeletedHtml($prev.cloneNode(true));
       $deleted.setAttribute('data-diff-type', 'text-to-img');
       $deleted.setAttribute('data-diff-remove', 'remove-text');
       $wrapper.appendChild($deleted);
-      
+
       const $imgWrapper = createEmptyDom('span');
       $imgWrapper.setAttribute('data-diff-add', 'add-element');
-      $imgWrapper.className = 'diff-wrapper';
-      
+
       const $newImg = $current.cloneNode(true);
       $newImg.setAttribute('data-diff-type', 'text-to-img');
       $newImg.setAttribute('data-diff-add', 'add-element');
       $imgWrapper.appendChild($newImg);
-      
+
       const parentNode = $current.parentNode;
       $current.remove();
       parentNode.appendChild($wrapper);
@@ -149,31 +154,31 @@ export const handleReplaceElement = (diff) => {
     if ($current.nodeName === 'IMG' && $prev.nodeName === 'IMG') {
       const prevSrc = $prev.getAttribute('src');
       const currentSrc = $current.getAttribute('src');
-      
+
       if (prevSrc !== currentSrc) {
+        console.log("图片替换图片，src 发生变化");
         const $wrapper = createEmptyDom('span');
         $wrapper.setAttribute('data-diff-remove', 'remove-element');
-        $wrapper.className = 'diff-wrapper';
-        
+
         const $deleted = formatDeletedHtml($prev.cloneNode(true));
         $deleted.setAttribute('data-diff-type', 'img-replaced');
         $deleted.setAttribute('data-diff-remove', 'remove-element');
         $wrapper.appendChild($deleted);
-        
+
         const $imgWrapper = createEmptyDom('span');
         $imgWrapper.setAttribute('data-diff-add', 'add-element');
-        $imgWrapper.className = 'diff-wrapper';
-        
+
         const $newImg = $current.cloneNode(true);
         $newImg.setAttribute('data-diff-type', 'img-replaced');
         $newImg.setAttribute('data-diff-add', 'add-element');
         $imgWrapper.appendChild($newImg);
-        
+
         const parentNode = $current.parentNode;
         $current.remove();
         parentNode.appendChild($wrapper);
         parentNode.appendChild($imgWrapper);
       } else {
+        console.log("图片替换图片，但是 src 没有变化");
         const prevWidth = $prev.getAttribute('width') || $prev.style.width;
         const prevHeight = $prev.getAttribute('height') || $prev.style.height;
         const currentWidth = $current.getAttribute('width') || $current.style.width;
@@ -181,13 +186,13 @@ export const handleReplaceElement = (diff) => {
 
         if (prevWidth !== currentWidth || prevHeight !== currentHeight) {
           const $wrapper = createEmptyDom('span');
-          
+
           const $newImg = $current.cloneNode(true);
           $newImg.setAttribute('data-diff-type', 'img-resized');
           $newImg.setAttribute('data-old-size', `${prevWidth}x${prevHeight}`);
           $newImg.setAttribute('data-new-size', `${currentWidth}x${currentHeight}`);
           $wrapper.appendChild($newImg);
-          
+
           const parentNode = $current.parentNode;
           $current.remove();
           parentNode.appendChild($wrapper);
@@ -352,11 +357,12 @@ const formatDeletedHtml = ($deleted) => {
     $del.innerText = $deleted.nodeValue || '';
     return $del;
   } else {
+    const $clone = $deleted.cloneNode(true);
     // 清除所有现有的 diff 标记
-    $deleted.removeAttribute('data-diff-add');
-    $deleted.removeAttribute('data-diff-change');
-    $deleted.setAttribute('data-diff-remove', 'remove-element');
-    return $deleted;
+    $clone.removeAttribute('data-diff-add');
+    $clone.removeAttribute('data-diff-change');
+    $clone.setAttribute('data-diff-remove', 'remove-element');
+    return $clone;
   }
 };
 
@@ -379,7 +385,7 @@ const deepFindText = ($wrapper, tag, stopTags = [], createFlag) => {
     // 如果图片已经有了 diff type，不要添加额外的标记
     if (!$wrapper.hasAttribute('data-diff-type')) {
       // 只有在没有其他 diff 标记的情况下才添加 change 标记
-      if (!$wrapper.hasAttribute('data-diff-add') && 
+      if (!$wrapper.hasAttribute('data-diff-add') &&
           !$wrapper.hasAttribute('data-diff-remove')) {
         $wrapper.setAttribute('data-diff-change', 'img');
       }

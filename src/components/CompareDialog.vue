@@ -3,26 +3,31 @@
 
     <el-form label-width="90px" label-position="top">
 
-      <el-form-item label="a版本">
-        <TipTapDiffEditor ref="current"/>
-      </el-form-item>
-
-      <el-form-item label="b版本">
-        <TipTapDiffEditor ref="compare"/>
-      </el-form-item>
-
-      <el-form-item label="开始对比">
-        <el-button @click="startCompare">开始对比</el-button>
-      </el-form-item>
-
-      <span v-if="isDataLoaded">
-        <el-form-item label="内容简介">
-          <template slot="label">
-            <span class="content-label">内容简介：</span>
-          </template>
-          <TipTapDiffEditor ref="diffEditor"/>
-        </el-form-item>
-      </span>
+      <el-row :gutter="20">
+        <!-- 左边：a版本和b版本 -->
+        <el-col :span="12">
+          <el-form-item label="a版本">
+            <TipTapDiffEditor ref="current" />
+          </el-form-item>
+          <el-form-item label="b版本">
+            <TipTapDiffEditor ref="compare" />
+          </el-form-item>
+        </el-col>
+        <!-- 右边：对比结果 -->
+        <el-col :span="12">
+          <el-form-item label="重新对比">
+            <el-button @click="startCompare">重新对比</el-button>
+          </el-form-item>
+          <span v-if="isDataLoaded">
+            <el-form-item label="结果">
+              <template #label>
+                <span class="content-label">结果</span>
+              </template>
+              <TipTapDiffEditor ref="diffEditor" />
+            </el-form-item>
+          </span>
+        </el-col>
+      </el-row>
     </el-form>
 
     <template #footer>
