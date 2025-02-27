@@ -95,6 +95,108 @@ export const handleReplaceElement = (diff) => {
   let $current = diff.newValue;
   let $prev = diff.oldValue;
 
+  if ($current.nodeName === 'IMG' || $prev.nodeName === 'IMG') {
+    // 如果是图片替换为文本
+    if ($prev.nodeName === 'IMG' && $current.nodeType === Node.TEXT_NODE) {
+      const $wrapper = createEmptyDom('span');
+      $wrapper.setAttribute('data-diff-remove', 'remove-element');
+      $wrapper.className = 'diff-wrapper'; // 添加类名以帮助识别
+      
+      const $deleted = formatDeletedHtml($prev.cloneNode(true));
+      $deleted.setAttribute('data-diff-type', 'img-to-text');
+      $deleted.setAttribute('data-diff-remove', 'remove-element');
+      $wrapper.appendChild($deleted);
+      
+      const $ins = createEmptyDom('span');
+      $ins.setAttribute('data-diff-add', 'add-text');
+      $ins.innerHTML = $current.nodeValue || '';
+      
+      const parentNode = $current.parentNode;
+      $current.remove();
+      parentNode.appendChild($wrapper);
+      parentNode.appendChild($ins);
+      return;
+    }
+
+    // 如果是文本替换为图片
+    if ($current.nodeName === 'IMG' && $prev.nodeType === Node.TEXT_NODE) {
+      const $wrapper = createEmptyDom('span');
+      $wrapper.setAttribute('data-diff-remove', 'remove-text');
+      $wrapper.className = 'diff-wrapper';
+      
+      const $deleted = formatDeletedHtml($prev.cloneNode(true));
+      $deleted.setAttribute('data-diff-type', 'text-to-img');
+      $deleted.setAttribute('data-diff-remove', 'remove-text');
+      $wrapper.appendChild($deleted);
+      
+      const $imgWrapper = createEmptyDom('span');
+      $imgWrapper.setAttribute('data-diff-add', 'add-element');
+      $imgWrapper.className = 'diff-wrapper';
+      
+      const $newImg = $current.cloneNode(true);
+      $newImg.setAttribute('data-diff-type', 'text-to-img');
+      $newImg.setAttribute('data-diff-add', 'add-element');
+      $imgWrapper.appendChild($newImg);
+      
+      const parentNode = $current.parentNode;
+      $current.remove();
+      parentNode.appendChild($wrapper);
+      parentNode.appendChild($imgWrapper);
+      return;
+    }
+
+    // 如果是图片替换图片
+    if ($current.nodeName === 'IMG' && $prev.nodeName === 'IMG') {
+      const prevSrc = $prev.getAttribute('src');
+      const currentSrc = $current.getAttribute('src');
+      
+      if (prevSrc !== currentSrc) {
+        const $wrapper = createEmptyDom('span');
+        $wrapper.setAttribute('data-diff-remove', 'remove-element');
+        $wrapper.className = 'diff-wrapper';
+        
+        const $deleted = formatDeletedHtml($prev.cloneNode(true));
+        $deleted.setAttribute('data-diff-type', 'img-replaced');
+        $deleted.setAttribute('data-diff-remove', 'remove-element');
+        $wrapper.appendChild($deleted);
+        
+        const $imgWrapper = createEmptyDom('span');
+        $imgWrapper.setAttribute('data-diff-add', 'add-element');
+        $imgWrapper.className = 'diff-wrapper';
+        
+        const $newImg = $current.cloneNode(true);
+        $newImg.setAttribute('data-diff-type', 'img-replaced');
+        $newImg.setAttribute('data-diff-add', 'add-element');
+        $imgWrapper.appendChild($newImg);
+        
+        const parentNode = $current.parentNode;
+        $current.remove();
+        parentNode.appendChild($wrapper);
+        parentNode.appendChild($imgWrapper);
+      } else {
+        const prevWidth = $prev.getAttribute('width') || $prev.style.width;
+        const prevHeight = $prev.getAttribute('height') || $prev.style.height;
+        const currentWidth = $current.getAttribute('width') || $current.style.width;
+        const currentHeight = $current.getAttribute('height') || $current.style.height;
+
+        if (prevWidth !== currentWidth || prevHeight !== currentHeight) {
+          const $wrapper = createEmptyDom('span');
+          
+          const $newImg = $current.cloneNode(true);
+          $newImg.setAttribute('data-diff-type', 'img-resized');
+          $newImg.setAttribute('data-old-size', `${prevWidth}x${prevHeight}`);
+          $newImg.setAttribute('data-new-size', `${currentWidth}x${currentHeight}`);
+          $wrapper.appendChild($newImg);
+          
+          const parentNode = $current.parentNode;
+          $current.remove();
+          parentNode.appendChild($wrapper);
+        }
+      }
+      return;
+    }
+  }
+
   if (
     $current.nodeType === Node.TEXT_NODE &&
     $prev.nodeName === 'SPAN' &&
@@ -183,6 +285,7 @@ export const handleChangeAttribute = (diff) => {
 };
 
 const parseStyles = (styleStr) => {
+  if (!styleStr) return {};
   return styleStr.split(';').reduce((acc, pair) => {
     const [key, value] = pair.split(':');
     if (key) acc[key.trim()] = value?.trim();
@@ -196,6 +299,15 @@ export const handleChangeTag = (diff) => {
 };
 
 export const formatMixedDom = ($wrapper) => {
+  // 先处理图片的 diff 标记
+  $wrapper.querySelectorAll('img').forEach(($img) => {
+    // 如果图片已经有了特定的 diff type，移除可能存在的 change 标记
+    if ($img.hasAttribute('data-diff-type')) {
+      $img.removeAttribute('data-diff-change');
+    }
+  });
+
+  // 处理其他元素
   $wrapper.querySelectorAll('[data-diff-add]').forEach(($item) => {
     $item.removeAttribute('data-diff-add');
     deepFindText($item, 'span', [], () => {
@@ -221,6 +333,10 @@ export const formatMixedDom = ($wrapper) => {
   });
 
   $wrapper.querySelectorAll('[data-diff-change]').forEach(($item) => {
+    // 跳过已经有 diff type 的图片
+    if ($item.tagName.toLowerCase() === 'img' && $item.hasAttribute('data-diff-type')) {
+      return;
+    }
     deepFindText($item, 'span', ['table', 'thead', 'tbody', 'tr'], () => {
       const $span = createEmptyDom('span');
       $span.setAttribute('data-diff-change', $item.getAttribute('data-diff-change'));
@@ -236,6 +352,9 @@ const formatDeletedHtml = ($deleted) => {
     $del.innerText = $deleted.nodeValue || '';
     return $del;
   } else {
+    // 清除所有现有的 diff 标记
+    $deleted.removeAttribute('data-diff-add');
+    $deleted.removeAttribute('data-diff-change');
     $deleted.setAttribute('data-diff-remove', 'remove-element');
     return $deleted;
   }
@@ -255,8 +374,16 @@ const deepFindText = ($wrapper, tag, stopTags = [], createFlag) => {
     return;
   }
 
-  if ($wrapper.tagName.toLowerCase() === 'img') {
-    $wrapper.setAttribute('data-diff-change', 'img');
+  // 修改图片处理逻辑
+  if ($wrapper.tagName && $wrapper.tagName.toLowerCase() === 'img') {
+    // 如果图片已经有了 diff type，不要添加额外的标记
+    if (!$wrapper.hasAttribute('data-diff-type')) {
+      // 只有在没有其他 diff 标记的情况下才添加 change 标记
+      if (!$wrapper.hasAttribute('data-diff-add') && 
+          !$wrapper.hasAttribute('data-diff-remove')) {
+        $wrapper.setAttribute('data-diff-change', 'img');
+      }
+    }
     return;
   }
 

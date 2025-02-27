@@ -9,13 +9,78 @@ import TableCell from '@tiptap/extension-table-cell'
 import TableHeader from '@tiptap/extension-table-header'
 import Underline from '@tiptap/extension-underline'
 
+// 创建自定义的 Image 扩展
+const CustomImage = Image.extend({
+  addAttributes() {
+    return {
+      ...Image.config.addAttributes(),
+      'data-diff-add': {
+        default: null,
+        parseHTML: element => element.getAttribute('data-diff-add'),
+        renderHTML: attributes => {
+          if (!attributes['data-diff-add']) return {}
+          return { 'data-diff-add': attributes['data-diff-add'] }
+        }
+      },
+      'data-diff-remove': {
+        default: null,
+        parseHTML: element => element.getAttribute('data-diff-remove'),
+        renderHTML: attributes => {
+          if (!attributes['data-diff-remove']) {
+            return {}
+          }
+          return {
+            'data-diff-remove': attributes['data-diff-remove']
+          }
+        }
+      },
+      'data-diff-change': {
+        default: null,
+        parseHTML: element => element.getAttribute('data-diff-change'),
+        renderHTML: attributes => {
+          if (!attributes['data-diff-change']) {
+            return {}
+          }
+          return {
+            'data-diff-change': attributes['data-diff-change']
+          }
+        }
+      },
+      'data-diff-type': {
+        default: null,
+        parseHTML: element => element.getAttribute('data-diff-type'),
+        renderHTML: attributes => {
+          if (!attributes['data-diff-type']) return {}
+          return { 'data-diff-type': attributes['data-diff-type'] }
+        }
+      },
+      'data-old-size': {
+        default: null,
+        parseHTML: element => element.getAttribute('data-old-size'),
+        renderHTML: attributes => {
+          if (!attributes['data-old-size']) return {}
+          return { 'data-old-size': attributes['data-old-size'] }
+        }
+      },
+      'data-new-size': {
+        default: null,
+        parseHTML: element => element.getAttribute('data-new-size'),
+        renderHTML: attributes => {
+          if (!attributes['data-new-size']) return {}
+          return { 'data-new-size': attributes['data-new-size'] }
+        }
+      }
+    }
+  }
+})
+
 export function tipTapInit() {
   const createEditor = (options = {}) => {
     // 确保核心扩展最先加载
     const coreExtensions = [
       StarterKit,
       DiffMark,
-      Image.configure({inline: true, allowBase64: true}),
+      CustomImage.configure({inline: true, allowBase64: true}), // 使用自定义的 Image 扩展
       Resizable.configure({
         types: ["image", "video"], // resizable type
         handlerStyle: { // handler point style

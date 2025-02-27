@@ -30,7 +30,7 @@ const TEXT_RATIO = 0.8;
 const IDENTITY_PRIORITY = 70;
 
 const PREFER_AS_REPLACE_ELEMENT = {
-  IMG: 'src',
+  IMG: ['src', 'width', 'height'],
   A: 'href',
 };
 
@@ -271,21 +271,33 @@ const getPatchBetweenSameTagNodes = ($similar, $to, options) => {
     }
   } else {
     let replaced = false;
-    for (const tag of Object.keys(PREFER_AS_REPLACE_ELEMENT)) {
-      if ($to.nodeName === tag) {
-        if (
-          $similar.getAttribute(PREFER_AS_REPLACE_ELEMENT[tag]) !== $to.getAttribute(PREFER_AS_REPLACE_ELEMENT[tag])
-        ) {
-          patches.push({
-            action: 'replaceElement',
-            oldValue: $similar,
-            newValue: $to,
-          });
-          replaced = true;
-          break;
+    
+    if (isImageElement($to)) {
+      if (compareImageAttributes($similar, $to)) {
+        patches.push({
+          action: 'replaceElement',
+          oldValue: $similar,
+          newValue: $to,
+        });
+        replaced = true;
+      }
+    } else {
+      for (const tag of Object.keys(PREFER_AS_REPLACE_ELEMENT)) {
+        if ($to.nodeName === tag && typeof PREFER_AS_REPLACE_ELEMENT[tag] === 'string') {
+          if ($similar.getAttribute(PREFER_AS_REPLACE_ELEMENT[tag]) !== 
+              $to.getAttribute(PREFER_AS_REPLACE_ELEMENT[tag])) {
+            patches.push({
+              action: 'replaceElement',
+              oldValue: $similar,
+              newValue: $to,
+            });
+            replaced = true;
+            break;
+          }
         }
       }
     }
+
     if (!replaced) {
       patches.push(...collectAttrPatches($similar, $to, options));
       if ($similar.innerHTML !== $to.innerHTML) {
@@ -498,6 +510,22 @@ const getChildrenPriority = ($from, $to) => {
 
 export const getIdentityPriority = ($from, $to, originPriority) => {
   if ($from.nodeType === NodeTypes.text || $to.nodeType === NodeTypes.text) return originPriority;
+  
+  if (isImageElement($from) && isImageElement($to)) {
+    const fromSrc = $from.getAttribute('src') || '';
+    const toSrc = $to.getAttribute('src') || '';
+    if (fromSrc === toSrc) {
+      return originPriority + IDENTITY_PRIORITY;
+    }
+    const fromWidth = $from.getAttribute('width') || '';
+    const fromHeight = $from.getAttribute('height') || '';
+    const toWidth = $to.getAttribute('width') || '';
+    const toHeight = $to.getAttribute('height') || '';
+    if (fromWidth === toWidth && fromHeight === toHeight) {
+      return originPriority + (IDENTITY_PRIORITY / 2);
+    }
+  }
+
   const fromId = $from.getAttribute('id');
   const toId = $to.getAttribute('id');
   if (fromId && fromId === toId) return originPriority + IDENTITY_PRIORITY;
@@ -675,4 +703,17 @@ const internalSyncMark = ($source, $dest, newHighlightIds) => {
       internalSyncMark($node, $similar, newHighlightIds);
     }
   }
+};
+
+const isImageElement = ($node) => {
+  return $node.nodeName === 'IMG';
+};
+
+const compareImageAttributes = ($from, $to) => {
+  const attrs = PREFER_AS_REPLACE_ELEMENT.IMG;
+  return attrs.some(attr => {
+    const fromValue = $from.getAttribute(attr) || '';
+    const toValue = $to.getAttribute(attr) || '';
+    return fromValue !== toValue;
+  });
 };
