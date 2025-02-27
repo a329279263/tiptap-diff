@@ -194,9 +194,6 @@ const diffInternal = ($origin, $changed, options) => {
 
   originChildNodes.forEach(($node, index) => {
     if (usedOriginChildIndex.includes(index)) return;
-    
-    const actionName = $node.nodeType === NodeTypes.text ? 'removeTextElement' : 'removeElement';
-    
     let insertBefore = null;
     let nextIndex = index + 1;
     while (nextIndex < originChildNodes.length) {
@@ -207,13 +204,67 @@ const diffInternal = ($origin, $changed, options) => {
       nextIndex += 1;
     }
 
-    patches.push({
-      action: actionName,
-      element: $node,
-      before: insertBefore || null,
-      after: null,
-      in: !insertBefore ? $changed : null
-    });
+    const actionName = $node.nodeType === NodeTypes.text ? 'removeTextElement' : 'removeElement';
+    let removePatch;
+
+    if (insertBefore) {
+      patches.push(
+        (removePatch = {
+          action: actionName,
+          element: $node,
+          before: insertBefore,
+        }),
+      );
+    } else if (!changedChildNodes.length) {
+      const isRootDiv = !$changed.parentElement;
+      patches.unshift(
+        (removePatch = {
+          action: actionName,
+          element: $node,
+          ...(isRootDiv ? {} : { in: $changed }),
+        }),
+      );
+    } else {
+      const siblingPrev = usedOriginChildIndex.find((item) => item < index);
+
+      if (siblingPrev === undefined) {
+        patches.push(
+          (removePatch = {
+            action: actionName,
+            element: $node,
+            before: changedChildNodes[0],
+          }),
+        );
+      } else {
+        patches.unshift(
+          (removePatch = {
+            action: actionName,
+            element: $node,
+            after: usedMaps[siblingPrev],
+          }),
+        );
+      }
+    }
+
+    if (removePatch.action === 'removeElement') {
+      const $fromElement = removePatch.element;
+      const $toElements = (
+        removePatch.before
+          ? removePatch.before.previousSibling
+          : removePatch.after
+            ? removePatch.after.nextSibling
+            : null
+      );
+      if ($toElements) {
+        const addPatch = patches.find((item) => {
+          return item.action === 'addElement' && $toElements === item.element;
+        });
+        if (addPatch) {
+          patches = patches.filter((item) => item !== addPatch && item !== removePatch);
+          patches.push(...getPatchBetweenSameTagNodes($fromElement, addPatch.element, options));
+        }
+      }
+    }
   });
 
   return patches;
@@ -233,7 +284,7 @@ const getPatchBetweenSameTagNodes = ($similar, $to, options) => {
     }
   } else {
     let replaced = false;
-    
+
     if (isImageElement($to)) {
       if (compareImageAttributes($similar, $to)) {
         patches.push({
@@ -246,7 +297,7 @@ const getPatchBetweenSameTagNodes = ($similar, $to, options) => {
     } else {
       for (const tag of Object.keys(PREFER_AS_REPLACE_ELEMENT)) {
         if ($to.nodeName === tag && typeof PREFER_AS_REPLACE_ELEMENT[tag] === 'string') {
-          if ($similar.getAttribute(PREFER_AS_REPLACE_ELEMENT[tag]) !== 
+          if ($similar.getAttribute(PREFER_AS_REPLACE_ELEMENT[tag]) !==
               $to.getAttribute(PREFER_AS_REPLACE_ELEMENT[tag])) {
             patches.push({
               action: 'replaceElement',
@@ -472,7 +523,7 @@ const getChildrenPriority = ($from, $to) => {
 
 export const getIdentityPriority = ($from, $to, originPriority) => {
   if ($from.nodeType === NodeTypes.text || $to.nodeType === NodeTypes.text) return originPriority;
-  
+
   if (isImageElement($from) && isImageElement($to)) {
     const fromSrc = $from.getAttribute('src') || '';
     const toSrc = $to.getAttribute('src') || '';
